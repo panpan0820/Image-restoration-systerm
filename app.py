@@ -199,8 +199,6 @@ def render_main_app():
     with restore_placeholder.container():
         st.info("""
         ✅ 应用已正常启动
-        \n📌 双画面模式：请上传至少2张图片，点击「运行复原模型」后左侧显示第1张、右侧显示第2张
-        \n📌 单画面模式：显示上传的第1张图片
         \n📌 下游任务可选择目标检测/场景分割，点击对应按钮执行
         """)
 
@@ -224,7 +222,7 @@ def render_main_app():
     if restore_run_btn:
         # 检查是否上传了图片
         if not uploaded_files:
-            st.error("❌ 请先上传至少1张图片！")
+            st.error("❌ 请先上传图片！")
         else:
             restore_placeholder.empty()
             
@@ -259,11 +257,11 @@ def render_main_app():
                     # 左列：固定显示第1张图片
                     if len(img_list) >= 1:
                         with col_left:
-                            st.subheader(f"📷 第1张图像（{restoration_model}复原后）")
+                            st.subheader(f"📷 第1张图像（{restoration_model}复原前）")
                             st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
                     else:
                         with col_left:
-                            st.warning("⚠️ 未加载到第1张图片！")
+                            st.warning("⚠️ 未加载到图片！")
                     
                     # 右列：固定显示第2张图片
                     if len(img_list) >= 2:
@@ -272,7 +270,7 @@ def render_main_app():
                             st.image(img_list[1]["restored"], caption=img_list[1]["name"], use_column_width=True)
                     else:
                         with col_right:
-                            st.error("❌ 双画面模式需要至少上传2张图片，请补充上传！")
+                            st.error("❌ 请上传退化图片！")
             
             # 运行成功提示
             st.success(f"✅ {restoration_model} 运行完成！共加载 {len(img_list)} 张图片")
@@ -309,3 +307,4 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
