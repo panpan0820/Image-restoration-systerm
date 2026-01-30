@@ -97,11 +97,11 @@ def render_main_app():
 
         st.markdown("---")
         st.subheader("输入配置")
-        input_mode = st.selectbox("选择输入", ["图像复原"], index=0)
+        input_mode = st.selectbox("选择输入", options=["本地文件", "设备拍摄"], index=0)
         
         # 新增：支持上传1-2张图片（适配单/双画面）
         uploaded_files = st.file_uploader(
-            "上传图像（支持1-2张）",
+            "上传图像",
             type=["jpg", "png", "jpeg"],
             help="支持 JPG/PNG 格式，单文件最大 200MB",
             accept_multiple_files=True  # 允许多文件上传
@@ -211,3 +211,4 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
