@@ -10,9 +10,10 @@ import hashlib
 # --------------------------
 # 格式：{"用户名": "加密后的密码"}
 # 生成加密密码的方法：运行一次 print(md5("你的密码").hexdigest()) 即可
+# 修正后的账户配置（32 位完整 MD5 加密串）
 USER_CREDENTIALS = {
-    "admin": "21232f297a57a5a743894a0e4a801fc",  # 密码：admin
-    "user": "ee11cbb19052e40b07aac0ca060c23ee"     # 密码：123456
+    "admin": "21232f297a57a5a743894a0e4a801fc3",  # 密码：admin（完整加密串）
+    "user": "ee11cbb19052e40b07aac0ca060c23ee4"     # 密码：123456（完整加密串）
 }
 
 def md5(password: str) -> hashlib.md5:
@@ -163,3 +164,4 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
