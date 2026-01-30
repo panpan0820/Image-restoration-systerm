@@ -67,7 +67,38 @@ def run_detection_model(img):
     return img
 
 # --------------------------
-# 4. 登录页面（无表单，极简版）
+# 4. 自定义样式：统一按钮样式+对齐布局
+# --------------------------
+def set_custom_style():
+    st.markdown("""
+    <style>
+    /* 统一红色按钮样式 */
+    .stButton>button {
+        background-color: #e63946 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0.7rem 0 !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        width: 100% !important;
+    }
+    .stButton>button:hover {
+        background-color: #d62828 !important;
+    }
+    /* 修复选择框和按钮的对齐问题 */
+    .stSelectbox, .stRadio {
+        margin-top: 0.5rem !important;
+    }
+    /* 统一容器间距 */
+    .element-container {
+        margin-bottom: 0.5rem !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --------------------------
+# 5. 登录页面（无表单，极简版）
 # --------------------------
 def render_login_page():
     st.set_page_config(page_title="🔒 系统登录", layout="centered")
@@ -92,7 +123,7 @@ def render_login_page():
             st.error("❌ 用户名或密码错误！")
 
 # --------------------------
-# 5. 主应用页面（新增模型选择+独立检测按钮）
+# 6. 主应用页面（对齐布局+红色按钮）
 # --------------------------
 def render_main_app():
     st.set_page_config(
@@ -100,6 +131,9 @@ def render_main_app():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # 应用自定义样式
+    set_custom_style()
 
     with st.sidebar:
         st.title(f"⚙️ 系统配置（{st.session_state['username']}）")
@@ -124,7 +158,7 @@ def render_main_app():
             accept_multiple_files=True  # 允许多文件上传
         )
 
-        # ① 新增：复原模型选择栏
+        # 复原模型选择栏
         st.markdown("---")
         st.subheader("复原模型选择")
         restoration_model = st.selectbox(
@@ -149,16 +183,16 @@ def render_main_app():
     st.title("🌨️ 恶劣天气下基于频域感知的图像复原系统")
     st.markdown("---")
 
-    # 控制面板
-    col1, col2, col3 = st.columns([1, 1, 2])
+    # 控制面板：重新调整列宽，确保按钮和下拉框垂直对齐
+    col1, col2, col3 = st.columns([1, 1.2, 1.8])  # 调整列宽比例，优化对齐
     with col1:
         display_mode = st.radio("显示模式", ["单画面", "双画面"], horizontal=True, index=1)
     with col2:
         target_filter = st.selectbox("目标过滤", ["全部目标"], index=0)
     with col3:
-        restore_run_btn = st.button("▶️ 运行复原模型", type="primary", use_container_width=True)
+        restore_run_btn = st.button("▶️ 运行复原模型", use_container_width=True)
 
-    # 复原画面区（带独立的复原运行按钮）
+    # 复原画面区
     st.markdown("### 复原画面")
     restore_placeholder = st.empty()
     # 默认提示
@@ -169,14 +203,15 @@ def render_main_app():
         \n📌 下游任务可选择目标检测/场景分割，点击对应按钮执行
         """)
 
-    # 下游任务结果区（② 目标检测独立运行按钮）
+    # 下游任务结果区：统一红色按钮+对齐布局
     if downstream_task == "目标检测":
-        # 目标检测标题 + 独立运行按钮（横向布局）
+        # 目标检测标题 + 独立运行按钮（调整列宽，确保按钮样式统一）
         det_col1, det_col2 = st.columns([8, 2])
         with det_col1:
             st.markdown("### 🎯 目标检测结果")
         with det_col2:
-            detect_run_btn = st.button("▶️ 运行目标检测", type="secondary", use_container_width=True)
+            # 去掉secondary，使用自定义红色样式
+            detect_run_btn = st.button("▶️ 运行目标检测", use_container_width=True)
         detect_placeholder = st.empty()
     else:
         st.markdown("### 🎨 场景分割结果")
@@ -184,7 +219,7 @@ def render_main_app():
         detect_run_btn = None  # 场景分割暂不显示按钮
 
     # --------------------------
-    # 核心功能1：运行复原模型（展示复原后图片）
+    # 核心功能1：运行复原模型
     # --------------------------
     if restore_run_btn:
         # 检查是否上传了图片
@@ -233,7 +268,7 @@ def render_main_app():
             st.success(f"✅ {restoration_model} 运行完成！")
 
     # --------------------------
-    # 核心功能2：运行目标检测（独立按钮）
+    # 核心功能2：运行目标检测
     # --------------------------
     if detect_run_btn and downstream_task == "目标检测":
         # 检查是否有复原后的图片/上传的图片
@@ -252,10 +287,10 @@ def render_main_app():
                     st.success("✅ 目标检测运行完成！")
 
 # --------------------------
-# 6. 程序入口（初始化+路由）
+# 7. 程序入口
 # --------------------------
 if __name__ == "__main__":
-    # 强制初始化 session_state，避免任何缺失
+    # 强制初始化 session_state
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if "username" not in st.session_state:
