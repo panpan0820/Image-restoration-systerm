@@ -41,8 +41,8 @@ def render_login_page():
     st.markdown("---")
 
     # 放弃 st.form，直接用输入框+按钮，避免表单缓存问题
-    username = st.text_input("用户名", placeholder="请输入 admin 或 user")
-    password = st.text_input("密码", type="password", placeholder="admin 或 123456")
+    username = st.text_input("用户名", placeholder="请输入用户名")
+    password = st.text_input("密码", type="password", placeholder="密码")
     submit_btn = st.button("登录", type="primary", use_container_width=True)
 
     # 登录逻辑（直接绑定按钮，无表单提交延迟）
@@ -138,5 +138,6 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
 
 
