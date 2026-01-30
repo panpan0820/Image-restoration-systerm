@@ -78,7 +78,7 @@ def render_login_page():
     # 应用自定义样式（含天气背景）
     set_page_style()
     
-    # 登录容器（带白色背景+圆角，提高可读性）
+    # 登录容器（完全居中，无白框）
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     st.title("🔒 恶劣天气图像复原系统")
     st.subheader("用户登录", divider="red")
@@ -179,3 +179,4 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
