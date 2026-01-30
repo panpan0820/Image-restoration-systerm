@@ -5,22 +5,61 @@ from PIL import Image
 import time
 
 # --------------------------
-# 1. 登录状态管理（极简版）
+# 1. 页面样式定制（核心：添加天气背景）
+# --------------------------
+def set_page_style():
+    """设置页面样式，添加恶劣天气背景图"""
+    st.markdown("""
+    <style>
+    /* 全局背景：添加雨雪天气纹理，半透明不遮挡内容 */
+    .stApp {
+        background-image: url("https://picsum.photos/id/1058/1920/1080"); /* 雨天背景图 */
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-color: rgba(255, 255, 255, 0.85); /* 白色遮罩提高可读性 */
+        background-blend-mode: overlay;
+    }
+    /* 登录框容器样式：白色背景+圆角+阴影 */
+    .login-container {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    /* 按钮样式优化 */
+    .stButton>button {
+        background-color: #e63946;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 0.5rem 0;
+        font-size: 16px;
+    }
+    .stButton>button:hover {
+        background-color: #d62828;
+    }
+    /* 输入框样式优化 */
+    .stTextInput>div>div>input {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 0.5rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --------------------------
+# 2. 登录状态管理（保留已修复的极简逻辑）
 # --------------------------
 def check_login() -> bool:
-    """检查是否已登录"""
     return st.session_state.get("logged_in", False)
 
 def login(username: str, password: str) -> bool:
-    """明文验证，无任何加密，确保成功"""
     username = username.strip()
     password = password.strip()
-    
-    # 唯一有效组合，简单直接
-    valid_credentials = [
-        ("admin", "123456")
-    ]
-    
+    valid_credentials = [("admin", "123456")]
     if (username, password) in valid_credentials:
         st.session_state["logged_in"] = True
         st.session_state["username"] = username
@@ -28,37 +67,41 @@ def login(username: str, password: str) -> bool:
     return False
 
 def logout():
-    """退出登录"""
     st.session_state["logged_in"] = False
     st.session_state["username"] = None
 
 # --------------------------
-# 2. 登录页面（无表单，极简版）
+# 3. 登录页面（添加天气背景+美化布局）
 # --------------------------
 def render_login_page():
-    st.set_page_config(page_title="🔒 系统登录", layout="centered")
-    st.title("🔒 恶劣天气图像复原系统 - 登录")
-    st.markdown("---")
+    st.set_page_config(page_title="🔒 恶劣天气图像复原系统 - 登录", layout="centered")
+    # 应用自定义样式（含天气背景）
+    set_page_style()
+    
+    # 登录容器（带白色背景+圆角，提高可读性）
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.title("🔒 恶劣天气图像复原系统")
+    st.subheader("用户登录", divider="red")
 
-    # 放弃 st.form，直接用输入框+按钮，避免表单缓存问题
+    # 登录输入框
     username = st.text_input("用户名", placeholder="请输入用户名")
-    password = st.text_input("密码", type="password", placeholder="密码")
-    submit_btn = st.button("登录", type="primary", use_container_width=True)
+    password = st.text_input("密码", type="password", placeholder="请输入密码")
+    submit_btn = st.button("登录", use_container_width=True)
 
-    # 登录逻辑（直接绑定按钮，无表单提交延迟）
+    # 登录逻辑
     if submit_btn:
         if not username or not password:
             st.error("❌ 用户名或密码不能为空！")
         elif login(username, password):
             st.success(f"✅ 欢迎回来，{st.session_state['username']}！正在进入系统...")
             time.sleep(0.5)
-            # 强制刷新页面（兼容所有 Streamlit 版本）
             st.experimental_rerun()
         else:
             st.error("❌ 用户名或密码错误！")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --------------------------
-# 3. 主应用页面（保留原有功能）
+# 4. 主应用页面（保留原有功能）
 # --------------------------
 def render_main_app():
     st.set_page_config(
@@ -124,20 +167,15 @@ def render_main_app():
         result_placeholder.markdown("### 🎨 场景分割结果")
 
 # --------------------------
-# 4. 程序入口（初始化+路由）
+# 5. 程序入口
 # --------------------------
 if __name__ == "__main__":
-    # 强制初始化 session_state，避免任何缺失
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if "username" not in st.session_state:
         st.session_state["username"] = None
 
-    # 路由控制
     if not check_login():
         render_login_page()
     else:
         render_main_app()
-
-
-
