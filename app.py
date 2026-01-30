@@ -123,7 +123,7 @@ def render_login_page():
             st.error("❌ 用户名或密码错误！")
 
 # --------------------------
-# 6. 主应用页面（对齐布局+红色按钮）
+# 6. 主应用页面（双画面固定显示前两张上传图）
 # --------------------------
 def render_main_app():
     st.set_page_config(
@@ -150,12 +150,12 @@ def render_main_app():
         st.subheader("输入配置")
         input_mode = st.selectbox("选择输入", options=["本地文件", "设备拍摄"], index=0)
         
-        # 新增：支持上传1-2张图片（适配单/双画面）
+        # 支持上传多张图片（重点：至少2张用于双画面）
         uploaded_files = st.file_uploader(
-            "上传图像",
+            "上传图像（双画面需至少上传2张）",
             type=["jpg", "png", "jpeg"],
-            help="支持 JPG/PNG 格式，单文件最大 200MB",
-            accept_multiple_files=True  # 允许多文件上传
+            help="支持 JPG/PNG 格式，单文件最大 200MB，双画面模式下前两张分别显示在左右侧",
+            accept_multiple_files=True
         )
 
         # 复原模型选择栏
@@ -183,8 +183,8 @@ def render_main_app():
     st.title("🌨️ 恶劣天气下基于频域感知的图像复原系统")
     st.markdown("---")
 
-    # 控制面板：重新调整列宽，确保按钮和下拉框垂直对齐
-    col1, col2, col3 = st.columns([1, 1.2, 1.8])  # 调整列宽比例，优化对齐
+    # 控制面板：调整列宽，确保按钮和下拉框垂直对齐
+    col1, col2, col3 = st.columns([1, 1.2, 1.8])
     with col1:
         display_mode = st.radio("显示模式", ["单画面", "双画面"], horizontal=True, index=1)
     with col2:
@@ -199,98 +199,106 @@ def render_main_app():
     with restore_placeholder.container():
         st.info("""
         ✅ 应用已正常启动
-        \n📌 请在左侧上传图像、选择复原模型，然后点击「运行复原模型」按钮
+        \n📌 双画面模式：请上传至少2张图片，点击「运行复原模型」后左侧显示第1张、右侧显示第2张
+        \n📌 单画面模式：显示上传的第1张图片
         \n📌 下游任务可选择目标检测/场景分割，点击对应按钮执行
         """)
 
-    # 下游任务结果区：统一红色按钮+对齐布局
+    # 下游任务结果区
     if downstream_task == "目标检测":
-        # 目标检测标题 + 独立运行按钮（调整列宽，确保按钮样式统一）
+        # 目标检测标题 + 独立运行按钮
         det_col1, det_col2 = st.columns([8, 2])
         with det_col1:
             st.markdown("### 🎯 目标检测结果")
         with det_col2:
-            # 去掉secondary，使用自定义红色样式
             detect_run_btn = st.button("▶️ 运行目标检测", use_container_width=True)
         detect_placeholder = st.empty()
     else:
         st.markdown("### 🎨 场景分割结果")
         detect_placeholder = st.empty()
-        detect_run_btn = None  # 场景分割暂不显示按钮
+        detect_run_btn = None
 
     # --------------------------
-    # 核心功能1：运行复原模型
+    # 核心功能1：运行复原模型（双画面固定显示前两张上传图）
     # --------------------------
     if restore_run_btn:
         # 检查是否上传了图片
         if not uploaded_files:
             st.error("❌ 请先上传至少1张图片！")
         else:
-            # 清空默认提示
             restore_placeholder.empty()
             
-            # 加载上传的图片
+            # 加载所有上传的图片（仅取前2张）
             img_list = []
-            for file in uploaded_files[:2]:  # 最多取2张
+            for idx, file in enumerate(uploaded_files[:2]):  # 仅处理前2张
                 cv2_img, pil_img = load_image(file)
                 if cv2_img is not None:
-                    # 运行复原模型
+                    # 可选：对图片运行复原模型（保留模型功能）
                     restored_img = run_restoration_model(pil_img, restoration_model)
-                    img_list.append((file.name, restored_img, cv2_img))
+                    img_list.append({
+                        "name": file.name,
+                        "original": pil_img,
+                        "restored": restored_img,
+                        "index": idx + 1  # 图片序号（1/2）
+                    })
             
-            # 单画面模式：展示第一张复原后图片
+            # 单画面模式：显示第一张图片（复原后）
             if display_mode == "单画面":
                 if img_list:
                     with restore_placeholder.container():
-                        st.subheader(f"📷 复原后图像（{restoration_model}）")
-                        st.image(img_list[0][1], caption=img_list[0][0], use_column_width=True)
-            # 双画面模式：展示原始图+复原后图
+                        st.subheader(f"📷 第1张图像（{restoration_model}复原后）")
+                        st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                else:
+                    st.warning("⚠️ 未加载到有效图片！")
+            
+            # 双画面模式：左侧=第1张，右侧=第2张（固定顺序）
             else:
                 with restore_placeholder.container():
                     col_left, col_right = st.columns(2)
-                    # 左列：原始图片
+                    
+                    # 左列：固定显示第1张图片
                     if len(img_list) >= 1:
                         with col_left:
-                            st.subheader("🌧️ 原始恶劣天气图像")
-                            # 重新加载原始图（未复原）
-                            orig_cv2, orig_pil = load_image(uploaded_files[0])
-                            st.image(orig_pil, caption=uploaded_files[0].name, use_column_width=True)
-                    # 右列：复原后图片
-                    if len(img_list) >= 1:
-                        with col_right:
-                            st.subheader(f"✨ 复原后图像（{restoration_model}）")
-                            st.image(img_list[0][1], caption=uploaded_files[0].name, use_column_width=True)
-                    # 上传2张图时的补充展示
+                            st.subheader(f"📷 第1张图像（{restoration_model}复原后）")
+                            st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                    else:
+                        with col_left:
+                            st.warning("⚠️ 未加载到第1张图片！")
+                    
+                    # 右列：固定显示第2张图片
                     if len(img_list) >= 2:
-                        st.info("ℹ️ 已上传2张图片，当前展示第一张的复原效果")
+                        with col_right:
+                            st.subheader(f"📷 第2张图像（{restoration_model}复原后）")
+                            st.image(img_list[1]["restored"], caption=img_list[1]["name"], use_column_width=True)
+                    else:
+                        with col_right:
+                            st.error("❌ 双画面模式需要至少上传2张图片，请补充上传！")
             
             # 运行成功提示
-            st.success(f"✅ {restoration_model} 运行完成！")
+            st.success(f"✅ {restoration_model} 运行完成！共加载 {len(img_list)} 张图片")
 
     # --------------------------
     # 核心功能2：运行目标检测
     # --------------------------
     if detect_run_btn and downstream_task == "目标检测":
-        # 检查是否有复原后的图片/上传的图片
         if not uploaded_files:
             st.error("❌ 请先上传图片并运行复原模型！")
         else:
             detect_placeholder.empty()
-            # 加载第一张图片并运行检测
+            # 加载第一张图片运行检测
             cv2_img, pil_img = load_image(uploaded_files[0])
             if cv2_img is not None:
-                # 运行目标检测模型
                 detected_img = run_detection_model(pil_img)
                 with detect_placeholder.container():
-                    st.subheader("🔍 目标检测结果展示")
-                    st.image(detected_img, caption="目标检测后图像", use_column_width=True)
+                    st.subheader("🔍 目标检测结果展示（第1张图）")
+                    st.image(detected_img, caption=uploaded_files[0].name, use_column_width=True)
                     st.success("✅ 目标检测运行完成！")
 
 # --------------------------
 # 7. 程序入口
 # --------------------------
 if __name__ == "__main__":
-    # 强制初始化 session_state
+    # 初始化session_state
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if "username" not in st.session_state:
