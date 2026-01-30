@@ -56,7 +56,7 @@ def render_login_page():
             # 强制刷新页面（兼容所有 Streamlit 版本）
             st.experimental_rerun()
         else:
-            st.error("❌ 用户名或密码错误！正确组合：admin/admin 或 user/123456")
+            st.error("❌ 用户名或密码错误！")
 
 # --------------------------
 # 3. 主应用页面（保留原有功能）
@@ -139,3 +139,4 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
