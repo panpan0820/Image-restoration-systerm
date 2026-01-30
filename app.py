@@ -5,98 +5,78 @@ from PIL import Image
 import time
 
 # --------------------------
-# 1. 页面样式定制（彻底屏蔽白框+完整天气背景）
+# 1. 页面样式定制（温和修复白框，保留登录界面）
 # --------------------------
 def set_page_style():
-    """设置页面样式，强制隐藏所有无关空白元素"""
+    """温和修复白框，不隐藏核心内容"""
     st.markdown("""
     <style>
-    /* 1. 彻底重置所有样式，消除任何默认空白 */
-    * {
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-    }
-    /* 2. 页面主体：全屏天气背景，无任何留白 */
+    /* 1. 重置默认边距，消除顶部白框 */
     .stApp {
         background-image: url("https://picsum.photos/id/1058/1920/1080"); /* 雨天背景 */
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
-        background-repeat: no-repeat !important;
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        background-blend-mode: overlay !important;
-        height: 100vh !important;  /* 全屏高度 */
-        width: 100vw !important;   /* 全屏宽度 */
-        overflow: hidden !important; /* 隐藏滚动条，避免空白 */
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-color: rgba(255, 255, 255, 0.85);
+        background-blend-mode: overlay;
+        padding-top: 2rem !important;  /* 少量顶部内边距，避免内容顶到边缘 */
+        padding-bottom: 2rem !important;
     }
-    /* 3. 强制隐藏所有无关的空白元素（关键：消除红框内的白框） */
-    .stApp > div:first-child,  /* 顶部空白容器 */
-    .stApp > div:nth-child(2), /* 调试占位元素 */
-    [data-testid="stHeader"],  /* Streamlit 顶部标题栏 */
-    [data-testid="stToolbar"], /* 右上角工具栏 */
-    [data-testid="stDecoration"] /* 装饰性空白元素 */
+    /* 2. 只隐藏Streamlit默认的顶部空白装饰元素（消除红框白框） */
+    [data-testid="stDecoration"],
+    [data-testid="stToolbar"] > div:first-child  /* 只隐藏多余的工具栏空白 */
     {
-        display: none !important;  /* 强制隐藏 */
-        height: 0 !important;
-        width: 0 !important;
+        display: none !important;
     }
-    /* 4. 登录框容器：居中+纯白背景+阴影，完全隔离 */
+    /* 3. 登录框容器：居中+纯白背景+阴影 */
     .login-container {
-        background-color: rgba(255, 255, 255, 0.98) !important;
-        padding: 3rem !important;
-        border-radius: 15px !important;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
-        max-width: 480px !important;
-        margin: 10vh auto !important;  /* 垂直居中 */
-        z-index: 9999 !important;      /* 置顶显示 */
+        background-color: rgba(255, 255, 255, 0.98);
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        max-width: 450px;
+        margin: 0 auto;  /* 水平居中 */
     }
-    /* 5. 输入框/按钮样式优化 */
+    /* 4. 输入框/按钮样式优化 */
     .stTextInput>div>div>input {
-        border: 1px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 1rem !important;
-        font-size: 16px !important;
-        margin-bottom: 1rem !important;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-size: 15px;
+        margin-bottom: 1rem;
     }
     .stButton>button {
-        background-color: #dc2626 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 1rem !important;
-        font-size: 17px !important;
-        font-weight: 600 !important;
-        width: 100% !important;
-        margin-top: 1rem !important;
+        background-color: #e63946;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.7rem 0;
+        font-size: 16px;
+        font-weight: 500;
+        width: 100%;
     }
     .stButton>button:hover {
-        background-color: #b91c1c !important;
+        background-color: #d62828;
     }
-    /* 6. 标题样式 */
-    h1 {
-        color: #1f2937 !important;
-        font-size: 24px !important;
-        margin-bottom: 1rem !important;
-        text-align: center !important;
+    /* 5. 标题样式 */
+    h1, .stSubheader {
+        text-align: center;
+        color: #2b2d42;
     }
     .stSubheader {
-        color: #4b5563 !important;
-        font-size: 18px !important;
-        text-align: center !important;
-        margin-bottom: 2rem !important;
+        margin-bottom: 1.5rem !important;
     }
-    /* 7. 提示文字样式 */
+    /* 6. 提示文字样式 */
     .stError, .stSuccess {
-        text-align: center !important;
-        margin-top: 1rem !important;
-        font-size: 15px !important;
+        text-align: center;
+        margin-top: 1rem;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # --------------------------
-# 2. 登录状态管理（保留极简逻辑）
+# 2. 登录状态管理（极简逻辑，确保登录可用）
 # --------------------------
 def check_login() -> bool:
     return st.session_state.get("logged_in", False)
@@ -116,30 +96,28 @@ def logout():
     st.session_state["username"] = None
 
 # --------------------------
-# 3. 登录页面（彻底无白框）
+# 3. 登录页面（正常显示+无白框）
 # --------------------------
 def render_login_page():
-    # 关键：禁用所有默认组件，避免生成空白元素
     st.set_page_config(
         page_title="🔒 恶劣天气图像复原系统 - 登录", 
-        layout="wide",  # 改为wide，避免centered布局的默认空白
-        initial_sidebar_state="collapsed",
-        menu_items=None  # 禁用右上角菜单
+        layout="centered",
+        initial_sidebar_state="collapsed"
     )
-    # 应用自定义样式（核心：隐藏所有无关元素）
+    # 应用样式（温和修复，不隐藏登录框）
     set_page_style()
     
-    # 登录容器（唯一显示的内容）
+    # 登录容器（正常显示）
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     st.title("🔒 恶劣天气图像复原系统")
     st.subheader("用户登录", divider="red")
 
-    # 登录输入框
+    # 登录输入框（正常显示）
     username = st.text_input("用户名", placeholder="请输入 admin 或 user")
     password = st.text_input("密码", type="password", placeholder="admin 或 123456")
     submit_btn = st.button("登录")
 
-    # 登录逻辑
+    # 登录逻辑（正常生效）
     if submit_btn:
         if not username or not password:
             st.error("❌ 用户名或密码不能为空！")
@@ -221,11 +199,13 @@ def render_main_app():
 # 5. 程序入口
 # --------------------------
 if __name__ == "__main__":
+    # 初始化session_state，避免缺失
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if "username" not in st.session_state:
         st.session_state["username"] = None
 
+    # 路由控制：未登录显示登录页，已登录显示主页面
     if not check_login():
         render_login_page()
     else:
