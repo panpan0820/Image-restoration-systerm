@@ -39,7 +39,7 @@ with st.sidebar:
     input_mode = st.selectbox("选择输入", ["图像复原", "视频检测"])
     uploaded_file = st.file_uploader(
         f"上传{input_mode[:2]}",
-        type=["jpg", "png", "jpeg"] if input_mode == "图片检测" else ["mp4", "avi", "mov"]
+        type=["jpg", "png", "jpeg"] if input_mode == "图像复原" else ["mp4", "avi", "mov"]
     )
 
 # --------------------------
@@ -129,6 +129,7 @@ else:
     # 默认显示封面图
     with placeholder.container():
         st.info("请在左侧上传图片或视频，然后点击【开始运行】按钮。")
+
 
 
 
