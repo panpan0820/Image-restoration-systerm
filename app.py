@@ -91,15 +91,13 @@ if run_btn and uploaded_file is not None:
             res_plotted = cv2.cvtColor(res_plotted, cv2.COLOR_BGR2RGB)  # 转换颜色通道
 
             # 显示画面
-            with placeholder.container():
-                if display_mode == "单画面":
-                    st.image(res_plotted, caption="检测结果", use_column_width=True)
-                else:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.image(image, caption="原始图片", use_column_width=True)
-                    with col2:
-                        st.image(res_plotted, caption="检测结果", use_column_width=True)
+            if display_mode == "单画面":
+                placeholder.image(res_plotted, caption="检测结果", use_column_width=True)
+            else:
+                # 用列对象替代 container，减少 DOM 操作
+                col1, col2 = st.columns(2)
+                col1.image(image, caption="原始图片", use_column_width=True)
+                col2.image(res_plotted, caption="检测结果", use_column_width=True)
 
             # 生成结果表格
             boxes = results[0].boxes
@@ -132,4 +130,5 @@ if run_btn and uploaded_file is not None:
 else:
     # 默认显示封面图
     with placeholder.container():
+
         st.info("请在左侧上传图片或视频，然后点击【开始运行】按钮。")
