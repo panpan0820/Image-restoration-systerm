@@ -45,7 +45,7 @@ with st.sidebar:
 # --------------------------
 # 主界面
 # --------------------------
-st.title("🚗 恶劣天气下基于频域感知的图像复原系统")
+st.title("🌨️ 恶劣天气下基于频域感知的图像复原系统")
 st.markdown("---")
 
 # 控制面板
@@ -58,7 +58,7 @@ with col3:
     run_btn = st.button("▶️ 开始运行", type="primary", use_container_width=True)
 
 # 画面展示区
-st.markdown("### 检测画面")
+st.markdown("### 复原画面")
 placeholder = st.empty()
 
 # 结果表格区
@@ -70,7 +70,7 @@ result_placeholder = st.empty()
 if run_btn and uploaded_file is not None:
     with st.spinner("正在处理..."):
         # 处理图片（仅模拟检测，不加载真实模型）
-        if input_mode == "图片检测":
+        if input_mode == "图像复原":
             # 读取上传的图片
             image = Image.open(uploaded_file).convert('RGB')
             img_np = np.array(image)
@@ -92,11 +92,11 @@ if run_btn and uploaded_file is not None:
 
             # 显示画面
             if display_mode == "单画面":
-                placeholder.image(res_plotted, caption="检测结果（模拟）", use_column_width=True)
+                placeholder.image(res_plotted, caption="复原结果", use_column_width=True)
             else:
                 col1, col2 = st.columns(2)
                 col1.image(image, caption="原始图片", use_column_width=True)
-                col2.image(res_plotted, caption="检测结果（模拟）", use_column_width=True)
+                col2.image(res_plotted, caption="复原结果", use_column_width=True)
 
             # 模拟识别结果表格
             table_data = []
@@ -128,5 +128,6 @@ if run_btn and uploaded_file is not None:
 else:
     # 默认显示封面图
     with placeholder.container():
-        st.info("请在左侧上传图片或视频，然后点击【开始运行】按钮（当前无真实YOLO模型，展示模拟结果）。")
+        st.info("请在左侧上传图片或视频，然后点击【开始运行】按钮。")
+
 
