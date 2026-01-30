@@ -1,12 +1,9 @@
-# 锁定 Streamlit 稳定版（避免前端DOM错误+安装兼容）
+# 仅保留 Streamlit 和基础图像处理库，无大依赖
 streamlit==1.28.2
-# 锁定 YOLOv8 稳定版（内置适配云环境的 PyTorch 依赖）
-ultralytics==8.0.196
-# 轻量版 OpenCV（避免安装额外依赖，加快速度）
 opencv-python==4.8.0.76
-# 基础图像处理库（固定兼容版本）
 Pillow==10.1.0
-# 数值计算库（与 ultralytics 完美兼容）
 numpy==1.24.3
-# （可选）添加国内镜像源，解决云环境安装超时
+
+# 国内镜像源，加快安装
 -i https://pypi.tuna.tsinghua.edu.cn/simple
+
