@@ -1,5 +1,4 @@
-# 必须指定版本，避免云端更新出错
-streamlit==1.32.2
+streamlit==1.28.2 # 替换原版本，1.28.2 是稳定无 DOM 冲突的版本
 ultralytics==8.1.38
 opencv-python==4.9.0.80
 Pillow==10.2.0
