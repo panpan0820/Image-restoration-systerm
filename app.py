@@ -18,8 +18,7 @@ def login(username: str, password: str) -> bool:
     
     # 唯一有效组合，简单直接
     valid_credentials = [
-        ("admin", "admin"),
-        ("user", "123456")
+        ("admin", "123456")
     ]
     
     if (username, password) in valid_credentials:
@@ -139,4 +138,5 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
+
 
