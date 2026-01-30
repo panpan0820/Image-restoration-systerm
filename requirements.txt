@@ -1,19 +1,13 @@
-# 1. 优先指定镜像源（必须在第一行，强制所有包从清华源下载）
+# 1. 镜像源置顶，优先国内下载
 -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 2. 安装 Streamlit 稳定版
+# 2. 锁定 Streamlit 稳定版 + 兼容的 rich 版本（解决冲突）
 streamlit==1.28.2
+rich==13.7.0
 
-# 3. 安装 OpenCV 服务器专用版（解决底层依赖缺失，比普通版更稳）
+# 3. 安装 OpenCV 终极无依赖版（彻底绕过 libGL，服务器专用）
 opencv-python-headless==4.8.0.76
 
-# 4. 安装基础依赖（与 OpenCV 完美兼容）
+# 4. 基础依赖（固定兼容版本）
 Pillow==10.1.0
 numpy==1.24.3
-
-# 5. 补充 Streamlit Cloud 缺失的底层系统依赖（关键兜底）
-pycairo==1.25.1
-
-
-
-
