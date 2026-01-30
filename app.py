@@ -5,53 +5,76 @@ from PIL import Image
 import time
 
 # --------------------------
-# 1. 页面样式定制（核心：添加天气背景）
+# 1. 页面样式定制（修复白框+优化天气背景）
 # --------------------------
 def set_page_style():
-    """设置页面样式，添加恶劣天气背景图"""
+    """设置页面样式，修复顶部白框，添加完整天气背景"""
     st.markdown("""
     <style>
-    /* 全局背景：添加雨雪天气纹理，半透明不遮挡内容 */
+    /* 重置全局默认样式，消除顶部白框 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    /* 页面主体：100%高度+完整天气背景，无顶部白框 */
     .stApp {
-        background-image: url("https://picsum.photos/id/1058/1920/1080"); /* 雨天背景图 */
+        background-image: url("https://picsum.photos/id/1058/1920/1080"); /* 雨天背景 */
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        background-color: rgba(255, 255, 255, 0.85); /* 白色遮罩提高可读性 */
+        background-repeat: no-repeat;
+        background-color: rgba(255, 255, 255, 0.85);
         background-blend-mode: overlay;
+        padding: 0 !important;  /* 强制消除顶部默认内边距 */
+        height: 100vh;          /* 占满整个视口高度 */
+        overflow: auto;         /* 保留滚动功能 */
     }
-    /* 登录框容器样式：白色背景+圆角+阴影 */
+    /* 登录框容器：居中+白色背景+圆角阴影，适配不同屏幕 */
     .login-container {
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        max-width: 400px;
-        margin: 0 auto;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 2.5rem;
+        border-radius: 12px;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        max-width: 450px;
+        margin: 5rem auto !important;  /* 垂直居中+水平居中 */
     }
     /* 按钮样式优化 */
     .stButton>button {
         background-color: #e63946;
         color: white;
         border: none;
-        border-radius: 5px;
-        padding: 0.5rem 0;
+        border-radius: 8px;
+        padding: 0.7rem 0;
         font-size: 16px;
+        font-weight: 500;
+        width: 100%;
     }
     .stButton>button:hover {
         background-color: #d62828;
+        transform: scale(1.02);
+        transition: all 0.2s ease;
     }
     /* 输入框样式优化 */
     .stTextInput>div>div>input {
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        padding: 0.5rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.8rem;
+        font-size: 15px;
+    }
+    /* 标题样式优化 */
+    h1, h2, h3 {
+        color: #2b2d42;
+        text-align: center;
+    }
+    .stSubheader {
+        margin-bottom: 1.5rem !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # --------------------------
-# 2. 登录状态管理（保留已修复的极简逻辑）
+# 2. 登录状态管理（保留极简逻辑）
 # --------------------------
 def check_login() -> bool:
     return st.session_state.get("logged_in", False)
@@ -71,11 +94,15 @@ def logout():
     st.session_state["username"] = None
 
 # --------------------------
-# 3. 登录页面（添加天气背景+美化布局）
+# 3. 登录页面（无白框+完整背景）
 # --------------------------
 def render_login_page():
-    st.set_page_config(page_title="🔒 恶劣天气图像复原系统 - 登录", layout="centered")
-    # 应用自定义样式（含天气背景）
+    st.set_page_config(
+        page_title="🔒 恶劣天气图像复原系统 - 登录", 
+        layout="centered",
+        initial_sidebar_state="collapsed"  # 隐藏侧边栏，避免干扰
+    )
+    # 应用自定义样式（修复白框）
     set_page_style()
     
     # 登录容器（完全居中，无白框）
@@ -86,7 +113,7 @@ def render_login_page():
     # 登录输入框
     username = st.text_input("用户名", placeholder="请输入用户名")
     password = st.text_input("密码", type="password", placeholder="请输入密码")
-    submit_btn = st.button("登录", use_container_width=True)
+    submit_btn = st.button("登录")
 
     # 登录逻辑
     if submit_btn:
@@ -179,4 +206,3 @@ if __name__ == "__main__":
         render_login_page()
     else:
         render_main_app()
-
