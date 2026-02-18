@@ -153,7 +153,7 @@ def set_custom_style():
 # --------------------------
 def render_auth_page():
     st.set_page_config(page_title="🔒 系统登录/注册", layout="centered")
-    st.title("🔒 恶劣天气图像复原系统 - 身份验证")
+    st.title("🔒 恶劣天气下基于频域感知的图像复原系统 - Login")
     st.markdown("---")
     
     # 初始化用户数据库
@@ -396,3 +396,4 @@ if __name__ == "__main__":
         render_auth_page()
     else:
         render_main_app()
+
