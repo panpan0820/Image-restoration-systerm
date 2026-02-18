@@ -236,7 +236,7 @@ def render_main_app():
         
         # 支持上传多张图片（重点：至少2张用于双画面）
         uploaded_files = st.file_uploader(
-            "上传图像（双画面需至少上传2张）",
+            "上传退化图像",
             type=["jpg", "png", "jpeg"],
             help="支持 JPG/PNG 格式，单文件最大 200MB，双画面模式下前两张分别显示在左右侧",
             accept_multiple_files=True
@@ -247,7 +247,7 @@ def render_main_app():
         st.subheader("复原模型选择")
         restoration_model = st.selectbox(
             "选择图像复原算法",
-            options=["去雨模型", "去雾模型", "去雪模型", "通用恶劣天气复原模型"],
+            options=["去雨模型", "去雾模型", "去雪模型"],
             index=0,
             help="不同模型适配不同类型的恶劣天气图像复原"
         )
@@ -396,4 +396,5 @@ if __name__ == "__main__":
         render_auth_page()
     else:
         render_main_app()
+
 
