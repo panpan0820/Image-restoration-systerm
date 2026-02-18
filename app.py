@@ -6,25 +6,32 @@ import time
 import io
 
 # --------------------------
-# 1. 登录状态管理（极简版）
+# 1. 全局配置与状态初始化
 # --------------------------
+# 初始化用户数据库（SessionState临时存储，重启后丢失，适合演示）
+def init_user_db():
+    if "user_database" not in st.session_state:
+        # 初始默认管理员账户
+        st.session_state["user_database"] = {
+            "admin": {"password": "123456", "role": "admin"}
+        }
+
+# 登录状态管理
 def check_login() -> bool:
     """检查是否已登录"""
     return st.session_state.get("logged_in", False)
 
 def login(username: str, password: str) -> bool:
-    """明文验证，无任何加密，确保成功"""
+    """验证登录信息"""
     username = username.strip()
     password = password.strip()
     
-    # 唯一有效组合，简单直接
-    valid_credentials = [
-        ("admin", "123456")
-    ]
-    
-    if (username, password) in valid_credentials:
+    # 从用户数据库验证
+    user_db = st.session_state.get("user_database", {})
+    if username in user_db and user_db[username]["password"] == password:
         st.session_state["logged_in"] = True
         st.session_state["username"] = username
+        st.session_state["user_role"] = user_db[username]["role"]
         return True
     return False
 
@@ -32,6 +39,35 @@ def logout():
     """退出登录"""
     st.session_state["logged_in"] = False
     st.session_state["username"] = None
+    st.session_state["user_role"] = None
+
+def register(username: str, password: str, confirm_pwd: str) -> tuple[bool, str]:
+    """
+    用户注册逻辑
+    返回：(是否成功, 提示信息)
+    """
+    username = username.strip()
+    password = password.strip()
+    confirm_pwd = confirm_pwd.strip()
+    
+    # 校验规则
+    if not username or not password:
+        return False, "用户名或密码不能为空！"
+    if len(username) < 3 or len(username) > 20:
+        return False, "用户名长度需在3-20个字符之间！"
+    if len(password) < 6:
+        return False, "密码长度不能少于6位！"
+    if password != confirm_pwd:
+        return False, "两次输入的密码不一致！"
+    if username in st.session_state["user_database"]:
+        return False, "用户名已存在！"
+    
+    # 注册成功，添加到用户数据库
+    st.session_state["user_database"][username] = {
+        "password": password,  # 注：实际项目需加密存储，此处仅演示
+        "role": "user"
+    }
+    return True, f"注册成功！欢迎 {username}，请登录系统。"
 
 # --------------------------
 # 2. 辅助函数：图片处理
@@ -86,6 +122,13 @@ def set_custom_style():
     .stButton>button:hover {
         background-color: #d62828 !important;
     }
+    /* 次要按钮样式（退出登录） */
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background-color: #6c757d !important;
+    }
+    .stButton>button[data-testid="baseButton-secondary"]:hover {
+        background-color: #5a6268 !important;
+    }
     /* 修复选择框和按钮的对齐问题 */
     .stSelectbox, .stRadio {
         margin-top: 0.5rem !important;
@@ -94,33 +137,74 @@ def set_custom_style():
     .element-container {
         margin-bottom: 0.5rem !important;
     }
+    /* 注册/登录选项卡样式 */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 16px;
+        padding: 0.5rem 2rem;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # --------------------------
-# 5. 登录页面（无表单，极简版）
+# 5. 登录/注册页面（整合选项卡）
 # --------------------------
-def render_login_page():
-    st.set_page_config(page_title="🔒 系统登录", layout="centered")
-    st.title("🔒 恶劣天气图像复原系统 - 登录")
+def render_auth_page():
+    st.set_page_config(page_title="🔒 系统登录/注册", layout="centered")
+    st.title("🔒 恶劣天气图像复原系统 - 身份验证")
     st.markdown("---")
+    
+    # 初始化用户数据库
+    init_user_db()
+    
+    # 设置自定义样式
+    set_custom_style()
+    
+    # 登录/注册选项卡
+    tab1, tab2 = st.tabs(["登录", "注册"])
+    
+    # 登录标签页
+    with tab1:
+        st.subheader("用户登录")
+        username = st.text_input("用户名", placeholder="请输入用户名", key="login_username")
+        password = st.text_input("密码", type="password", placeholder="请输入密码", key="login_pwd")
+        login_btn = st.button("登录", type="primary", use_container_width=True, key="login_btn")
 
-    # 放弃 st.form，直接用输入框+按钮，避免表单缓存问题
-    username = st.text_input("用户名", placeholder="请输入用户名")
-    password = st.text_input("密码", type="password", placeholder="请输入密码")
-    submit_btn = st.button("登录", type="primary", use_container_width=True)
+        # 登录逻辑
+        if login_btn:
+            if not username or not password:
+                st.error("❌ 用户名或密码不能为空！")
+            elif login(username, password):
+                st.success(f"✅ 欢迎回来，{st.session_state['username']}！正在进入系统...")
+                time.sleep(0.5)
+                st.experimental_rerun()
+            else:
+                st.error("❌ 用户名或密码错误！")
+    
+    # 注册标签页
+    with tab2:
+        st.subheader("用户注册")
+        reg_username = st.text_input("用户名", placeholder="请设置用户名（3-20位）", key="reg_username")
+        reg_pwd = st.text_input("密码", type="password", placeholder="请设置密码（至少6位）", key="reg_pwd")
+        reg_confirm_pwd = st.text_input("确认密码", type="password", placeholder="请再次输入密码", key="reg_confirm_pwd")
+        reg_btn = st.button("注册", type="primary", use_container_width=True, key="reg_btn")
 
-    # 登录逻辑（直接绑定按钮，无表单提交延迟）
-    if submit_btn:
-        if not username or not password:
-            st.error("❌ 用户名或密码不能为空！")
-        elif login(username, password):
-            st.success(f"✅ 欢迎回来，{st.session_state['username']}！正在进入系统...")
-            time.sleep(0.5)
-            # 强制刷新页面（兼容所有 Streamlit 版本）
-            st.experimental_rerun()
-        else:
-            st.error("❌ 用户名或密码错误！")
+        # 注册逻辑
+        if reg_btn:
+            success, msg = register(reg_username, reg_pwd, reg_confirm_pwd)
+            if success:
+                st.success(f"✅ {msg}")
+                # 自动清空注册表单
+                st.session_state["reg_username"] = ""
+                st.session_state["reg_pwd"] = ""
+                st.session_state["reg_confirm_pwd"] = ""
+                time.sleep(1)
+                # 切换到登录标签页（视觉提示）
+                st.rerun()
+            else:
+                st.error(f"❌ {msg}")
 
 # --------------------------
 # 6. 主应用页面（双画面固定显示前两张上传图）
@@ -296,15 +380,19 @@ def render_main_app():
 # 7. 程序入口
 # --------------------------
 if __name__ == "__main__":
-    # 初始化session_state
+    # 初始化基础session_state
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
     if "username" not in st.session_state:
         st.session_state["username"] = None
+    if "user_role" not in st.session_state:
+        st.session_state["user_role"] = None
+
+    # 初始化用户数据库
+    init_user_db()
 
     # 路由控制
     if not check_login():
-        render_login_page()
+        render_auth_page()
     else:
         render_main_app()
-
