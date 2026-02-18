@@ -85,6 +85,13 @@ def load_image(uploaded_file):
         return cv2_img, pil_img
     return None, None
 
+def convert_img_to_bytes(img: Image.Image):
+    """将PIL图片转换为字节流，用于下载"""
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", quality=95)
+    buf.seek(0)
+    return buf
+
 # --------------------------
 # 3. 模拟模型处理函数（占位，可替换为真实逻辑）
 # --------------------------
@@ -122,7 +129,7 @@ def set_custom_style():
     .stButton>button:hover {
         background-color: #d62828 !important;
     }
-    /* 次要按钮样式（退出登录） */
+    /* 次要按钮样式（退出登录/查看/下载） */
     .stButton>button[data-testid="baseButton-secondary"] {
         background-color: #6c757d !important;
     }
@@ -144,6 +151,23 @@ def set_custom_style():
     .stTabs [data-baseweb="tab"] {
         font-size: 16px;
         padding: 0.5rem 2rem;
+    }
+    /* 图片预览弹窗样式 */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    .modal-content {
+        max-width: 90%;
+        max-height: 90%;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -216,6 +240,18 @@ def render_main_app():
         initial_sidebar_state="expanded"
     )
     
+    # 初始化图片状态（用于查看/下载）
+    if "restored_img" not in st.session_state:
+        st.session_state["restored_img"] = None
+        st.session_state["restored_img_name"] = ""
+    if "detected_img" not in st.session_state:
+        st.session_state["detected_img"] = None
+        st.session_state["detected_img_name"] = ""
+    if "show_preview" not in st.session_state:
+        st.session_state["show_preview"] = False
+    if "preview_img" not in st.session_state:
+        st.session_state["preview_img"] = None
+
     # 应用自定义样式
     set_custom_style()
 
@@ -330,6 +366,25 @@ def render_main_app():
                     with restore_placeholder.container():
                         st.subheader(f"📷 第1张图像（{restoration_model}复原后）")
                         st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                        # 保存复原后的图片状态
+                        st.session_state["restored_img"] = img_list[0]["restored"]
+                        st.session_state["restored_img_name"] = img_list[0]["name"]
+                        
+                        # 新增查看/下载按钮
+                        btn_col1, btn_col2 = st.columns(2)
+                        with btn_col1:
+                            if st.button("👁️ 查看原图", type="secondary", use_container_width=True):
+                                st.session_state["preview_img"] = img_list[0]["restored"]
+                                st.session_state["show_preview"] = True
+                        with btn_col2:
+                            img_bytes = convert_img_to_bytes(img_list[0]["restored"])
+                            st.download_button(
+                                label="💾 下载图片",
+                                data=img_bytes,
+                                file_name=f"复原_{img_list[0]['name']}",
+                                mime="image/png",
+                                use_container_width=True
+                            )
                 else:
                     st.warning("⚠️ 未加载到有效图片！")
             
@@ -343,6 +398,26 @@ def render_main_app():
                         with col_left:
                             st.subheader(f"📷 第1张图像（{restoration_model}复原前）")
                             st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                            # 保存第一张复原图状态
+                            st.session_state["restored_img"] = img_list[0]["restored"]
+                            st.session_state["restored_img_name"] = img_list[0]["name"]
+                            
+                            # 新增查看/下载按钮（左列）
+                            btn_col1, btn_col2 = st.columns(2)
+                            with btn_col1:
+                                if st.button("👁️ 查看原图", type="secondary", use_container_width=True, key="view1"):
+                                    st.session_state["preview_img"] = img_list[0]["restored"]
+                                    st.session_state["show_preview"] = True
+                            with btn_col2:
+                                img_bytes = convert_img_to_bytes(img_list[0]["restored"])
+                                st.download_button(
+                                    label="💾 下载图片",
+                                    data=img_bytes,
+                                    file_name=f"复原_第1张_{img_list[0]['name']}",
+                                    mime="image/png",
+                                    use_container_width=True,
+                                    key="download1"
+                                )
                     else:
                         with col_left:
                             st.warning("⚠️ 未加载到图片！")
@@ -352,6 +427,26 @@ def render_main_app():
                         with col_right:
                             st.subheader(f"📷 第2张图像（{restoration_model}复原后）")
                             st.image(img_list[1]["restored"], caption=img_list[1]["name"], use_column_width=True)
+                            # 保存第二张复原图状态
+                            st.session_state["restored_img"] = img_list[1]["restored"]
+                            st.session_state["restored_img_name"] = img_list[1]["name"]
+                            
+                            # 新增查看/下载按钮（右列）
+                            btn_col1, btn_col2 = st.columns(2)
+                            with btn_col1:
+                                if st.button("👁️ 查看原图", type="secondary", use_container_width=True, key="view2"):
+                                    st.session_state["preview_img"] = img_list[1]["restored"]
+                                    st.session_state["show_preview"] = True
+                            with btn_col2:
+                                img_bytes = convert_img_to_bytes(img_list[1]["restored"])
+                                st.download_button(
+                                    label="💾 下载图片",
+                                    data=img_bytes,
+                                    file_name=f"复原_第2张_{img_list[1]['name']}",
+                                    mime="image/png",
+                                    use_container_width=True,
+                                    key="download2"
+                                )
                     else:
                         with col_right:
                             st.error("❌ 请上传退化图片！")
@@ -374,7 +469,42 @@ def render_main_app():
                 with detect_placeholder.container():
                     st.subheader("🔍 目标检测结果展示（第1张图）")
                     st.image(detected_img, caption=uploaded_files[0].name, use_column_width=True)
+                    # 保存检测后的图片状态
+                    st.session_state["detected_img"] = detected_img
+                    st.session_state["detected_img_name"] = uploaded_files[0].name
+                    
+                    # 新增查看/下载按钮（目标检测结果）
+                    btn_col1, btn_col2 = st.columns(2)
+                    with btn_col1:
+                        if st.button("👁️ 查看检测结果", type="secondary", use_container_width=True, key="view_det"):
+                            st.session_state["preview_img"] = detected_img
+                            st.session_state["show_preview"] = True
+                    with btn_col2:
+                        img_bytes = convert_img_to_bytes(detected_img)
+                        st.download_button(
+                            label="💾 下载检测结果",
+                            data=img_bytes,
+                            file_name=f"目标检测_{uploaded_files[0].name}",
+                            mime="image/png",
+                            use_container_width=True,
+                            key="download_det"
+                        )
                     st.success("✅ 目标检测运行完成！")
+
+    # --------------------------
+    # 图片预览弹窗（查看按钮触发）
+    # --------------------------
+    if st.session_state["show_preview"] and st.session_state["preview_img"] is not None:
+        st.markdown(f"""
+        <div class="modal" onclick="document.querySelector('.modal').style.display='none'">
+            <img src="data:image/png;base64,{st.image_to_url(st.session_state['preview_img'], width=1000)}" class="modal-content">
+        </div>
+        """, unsafe_allow_html=True)
+        # 关闭预览按钮
+        if st.button("❌ 关闭预览", type="secondary", use_container_width=True):
+            st.session_state["show_preview"] = False
+            st.session_state["preview_img"] = None
+            st.rerun()
 
 # --------------------------
 # 7. 程序入口
@@ -396,5 +526,3 @@ if __name__ == "__main__":
         render_auth_page()
     else:
         render_main_app()
-
-
