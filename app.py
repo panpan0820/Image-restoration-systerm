@@ -207,7 +207,7 @@ def render_auth_page():
                 st.error(f"❌ {msg}")
 
 # --------------------------
-# 6. 主应用页面（仅显示第一张上传图）
+# 6. 主应用页面（双画面固定显示前两张上传图）
 # --------------------------
 def render_main_app():
     st.set_page_config(
@@ -234,12 +234,12 @@ def render_main_app():
         st.subheader("输入配置")
         input_mode = st.selectbox("选择输入", options=["本地文件", "设备拍摄"], index=0)
         
-        # 仅支持上传单张图片（修改为单文件上传）
-        uploaded_file = st.file_uploader(
+        # 支持上传多张图片（重点：至少2张用于双画面）
+        uploaded_files = st.file_uploader(
             "上传退化图像",
             type=["jpg", "png", "jpeg"],
-            help="支持 JPG/PNG 格式，单文件最大 200MB",
-            accept_multiple_files=False  # 关键：关闭多文件上传
+            help="支持 JPG/PNG 格式，单文件最大 200MB，双画面模式下前两张分别显示在左右侧",
+            accept_multiple_files=True
         )
 
         # 复原模型选择栏
@@ -270,7 +270,7 @@ def render_main_app():
     # 控制面板：调整列宽，确保按钮和下拉框垂直对齐
     col1, col2, col3 = st.columns([1, 1.2, 1.8])
     with col1:
-        display_mode = st.radio("显示模式", ["单画面"], horizontal=True, index=0)  # 仅保留单画面
+        display_mode = st.radio("显示模式", ["单画面", "双画面"], horizontal=True, index=1)
     with col2:
         target_filter = st.selectbox("目标过滤", ["全部目标"], index=0)
     with col3:
@@ -301,35 +301,60 @@ def render_main_app():
         detect_run_btn = None
 
     # --------------------------
-    # 核心功能1：运行复原模型（仅处理第一张图片）
+    # 核心功能1：运行复原模型（双画面固定显示前两张上传图）
     # --------------------------
     if restore_run_btn:
         # 检查是否上传了图片
-        if not uploaded_file:
+        if not uploaded_files:
             st.error("❌ 请先上传图片！")
         else:
             restore_placeholder.empty()
             
-            # 仅加载第一张（也是唯一一张）上传的图片
+            # 加载所有上传的图片（仅取前2张）
             img_list = []
-            cv2_img, pil_img = load_image(uploaded_file)
-            if cv2_img is not None:
-                # 运行复原模型
-                restored_img = run_restoration_model(pil_img, restoration_model)
-                img_list.append({
-                    "name": uploaded_file.name,
-                    "original": pil_img,
-                    "restored": restored_img,
-                    "index": 1
-                })
+            for idx, file in enumerate(uploaded_files[:2]):  # 仅处理前2张
+                cv2_img, pil_img = load_image(file)
+                if cv2_img is not None:
+                    # 可选：对图片运行复原模型（保留模型功能）
+                    restored_img = run_restoration_model(pil_img, restoration_model)
+                    img_list.append({
+                        "name": file.name,
+                        "original": pil_img,
+                        "restored": restored_img,
+                        "index": idx + 1  # 图片序号（1/2）
+                    })
             
-            # 仅显示单画面（第一张图片）
-            if img_list:
-                with restore_placeholder.container():
-                    st.subheader(f"📷 图像（{restoration_model}复原后）")
-                    st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+            # 单画面模式：显示第一张图片（复原后）
+            if display_mode == "单画面":
+                if img_list:
+                    with restore_placeholder.container():
+                        st.subheader(f"📷 第1张图像（{restoration_model}复原后）")
+                        st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                else:
+                    st.warning("⚠️ 未加载到有效图片！")
+            
+            # 双画面模式：左侧=第1张，右侧=第2张（固定顺序）
             else:
-                st.warning("⚠️ 未加载到有效图片！")
+                with restore_placeholder.container():
+                    col_left, col_right = st.columns(2)
+                    
+                    # 左列：固定显示第1张图片
+                    if len(img_list) >= 1:
+                        with col_left:
+                            st.subheader(f"📷 第1张图像（{restoration_model}复原前）")
+                            st.image(img_list[0]["restored"], caption=img_list[0]["name"], use_column_width=True)
+                    else:
+                        with col_left:
+                            st.warning("⚠️ 未加载到图片！")
+                    
+                    # 右列：固定显示第2张图片
+                    if len(img_list) >= 2:
+                        with col_right:
+                            st.subheader(f"📷 第2张图像（{restoration_model}复原后）")
+                            st.image(img_list[1]["restored"], caption=img_list[1]["name"], use_column_width=True)
+                    else:
+                        with col_right:
+                            st.error("❌ 请上传退化图片！")
             
             # 运行成功提示
             st.success(f"✅ {restoration_model} 运行完成！共加载 {len(img_list)} 张图片")
@@ -338,17 +363,17 @@ def render_main_app():
     # 核心功能2：运行目标检测
     # --------------------------
     if detect_run_btn and downstream_task == "目标检测":
-        if not uploaded_file:
+        if not uploaded_files:
             st.error("❌ 请先上传图片并运行复原模型！")
         else:
             detect_placeholder.empty()
-            # 加载上传的图片运行检测
-            cv2_img, pil_img = load_image(uploaded_file)
+            # 加载第一张图片运行检测
+            cv2_img, pil_img = load_image(uploaded_files[0])
             if cv2_img is not None:
                 detected_img = run_detection_model(pil_img)
                 with detect_placeholder.container():
-                    st.subheader("🔍 目标检测结果展示")
-                    st.image(detected_img, caption=uploaded_file.name, use_column_width=True)
+                    st.subheader("🔍 目标检测结果展示（第1张图）")
+                    st.image(detected_img, caption=uploaded_files[0].name, use_column_width=True)
                     st.success("✅ 目标检测运行完成！")
 
 # --------------------------
@@ -371,3 +396,7 @@ if __name__ == "__main__":
         render_auth_page()
     else:
         render_main_app()
+
+
+
+怎么修改成只显示上传图片的第一张信息
