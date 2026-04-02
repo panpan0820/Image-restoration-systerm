@@ -235,7 +235,7 @@ def render_auth_page():
 # --------------------------
 def render_main_app():
     st.set_page_config(
-        page_title="🌨️ 恶劣天气下基于频域感知的图像复原系统",
+        page_title="🌨️ 基于频域感知的恶劣天气图像复原系统",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -300,7 +300,7 @@ def render_main_app():
     # --------------------------
     # 主界面核心逻辑
     # --------------------------
-    st.title("🌨️ 恶劣天气下基于频域感知的图像复原系统")
+    st.title("🌨️ 基于频域感知的恶劣天气图像复原系统")
     st.markdown("---")
 
     # 控制面板：调整列宽，确保按钮和下拉框垂直对齐
